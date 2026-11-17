@@ -1,0 +1,10 @@
+{
+  "name": "kapra-hisab",
+  "version": "1.0.1",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/cli": "latest",
+    "@capacitor/core": "latest"
+  }
+}

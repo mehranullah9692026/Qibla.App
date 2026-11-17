@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>کپڑے کا حساب</title>
+<style>
+:root{--ink:#1b2350;--thread:#d99a1e;--paper:#f6f3ec;--card:#fff;--line:#e2ddd0;--red:#b3261e;--ok:#1e7a4d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:#222;font:17px/1.7 "Noto Nastaliq Urdu","Noto Naskh Arabic",system-ui,sans-serif;padding:calc(64px + env(safe-area-inset-top)) 12px calc(76px + env(safe-area-inset-bottom))}
+header{position:fixed;top:0;inset-inline:0;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;font-weight:700;font-size:20px;border-bottom:4px solid var(--thread);z-index:5}
+nav{position:fixed;bottom:0;inset-inline:0;display:flex;background:var(--ink);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;background:none;border:0;color:#b9bedc;padding:10px 2px;font:inherit;font-size:14px}
+nav button.on{color:#fff;box-shadow:inset 0 -3px var(--thread)}
+.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
+.k{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:4px 0}
+.k:last-child{border:0}.big{font-size:22px;font-weight:700}.neg{color:var(--red)}.pos{color:var(--ok)}
+input,select,textarea{width:100%;padding:10px;margin:4px 0;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+button.b{background:var(--ink);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;margin:4px 0}
+button.s{background:var(--thread);color:#222;border:0;border-radius:8px;padding:2px 12px;font:inherit}
+button.d{background:none;border:0;color:var(--red);font:inherit}
+h3{margin:14px 4px 0}small{color:#666}
+</style></head><body>
+<header id="h"></header><main id="m"></main><nav id="nav"></nav>
+<script>
+const T={ur:{app:"کپڑے کا حساب",home:"خلاصہ",stock:"مال",sale:"فروخت",due:"اُدھار",exp:"اخراجات",more:"مزید",
+rev:"کل فروخت",profit:"خالص منافع",cash:"وصول شدہ رقم",dues:"باقی اُدھار",sv:"مال کی قیمت (خرید)",ex:"کل اخراجات",
+name:"نام",cost:"خرید قیمت",price:"فروخت قیمت",qty:"تعداد",add:"شامل کریں",addq:"مال بڑھائیں",del:"حذف",
+item:"مال چنیں",paid:"ادا کی گئی رقم",cust:"گاہک کا نام",sell:"فروخت کریں",none:"ابھی کچھ نہیں۔ اوپر سے شامل کریں۔",
+recv:"وصولی",amount:"رقم لکھیں",note:"تفصیل",lang:"English میں بدلیں",bk:"بیک اپ (یہ متن کہیں محفوظ کر لیں)",
+rs:"بیک اپ بحال کریں",rsb:"بحال کریں",low:"کم مال",nostock:"اتنا مال موجود نہیں",needc:"اُدھار کے لیے گاہک کا نام لکھیں",
+ok:"بحال ہو گیا",bad:"بیک اپ درست نہیں",sure:"حذف کریں؟",left:"باقی"},
+en:{app:"Kapra Hisab",home:"Summary",stock:"Stock",sale:"Sale",due:"Credit",exp:"Expenses",more:"More",
+rev:"Total sales",profit:"Net profit",cash:"Cash received",dues:"Credit pending",sv:"Stock value (cost)",ex:"Total expenses",
+name:"Name",cost:"Cost price",price:"Sale price",qty:"Qty",add:"Add",addq:"Add stock",del:"Delete",
+item:"Choose item",paid:"Amount paid",cust:"Customer name",sell:"Record sale",none:"Nothing yet. Add one above.",
+recv:"Receive",amount:"Enter amount",note:"Details",lang:"اردو میں بدلیں",bk:"Backup (save this text somewhere)",
+rs:"Restore backup",rsb:"Restore",low:"Low stock",nostock:"Not enough stock",needc:"Enter customer name for credit",
+ok:"Restored",bad:"Invalid backup",sure:"Delete?",left:"left"}};
+let S=JSON.parse(localStorage.getItem('kh')||'null')||{lang:'ur',items:[],sales:[],exps:[]},tab='home';
+const $=s=>document.querySelector(s),t=k=>T[S.lang][k]||k,save=()=>localStorage.setItem('kh',JSON.stringify(S));
+const n=v=>Math.round(+v||0).toLocaleString('en'),sum=(a,f)=>a.reduce((x,y)=>x+f(y),0);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5),v=id=>$('#'+id).value.trim();
+const row=(a,b,c)=>`<div class="k"><span>${a}</span><b class="${c||''}">${b}</b></div>`;
+const V={
+home(){const rev=sum(S.sales,s=>s.qty*s.price),cg=sum(S.sales,s=>s.qty*s.cost),ex=sum(S.exps,e=>e.amt),
+ due=sum(S.sales,s=>s.qty*s.price-s.paid),p=rev-cg-ex,low=S.items.filter(i=>i.qty<=2);
+ return `<div class="c"><small>${t('profit')}</small><div class="big ${p<0?'neg':'pos'}">${n(p)}</div></div><div class="c">`+
+ row(t('rev'),n(rev))+row(t('cash'),n(rev-due))+row(t('dues'),n(due),due?'neg':'')+row(t('ex'),n(ex))+row(t('sv'),n(sum(S.items,i=>i.qty*i.cost)))+`</div>`+
+ (low.length?`<div class="c"><b>${t('low')}</b>`+low.map(i=>row(esc(i.name),i.qty)).join('')+`</div>`:'')},
+stock(){return `<div class="c"><input id="a" placeholder="${t('name')}"><input id="b" type="number" inputmode="decimal" placeholder="${t('cost')}">
+ <input id="c" type="number" inputmode="decimal" placeholder="${t('price')}"><input id="d" type="number" inputmode="decimal" placeholder="${t('qty')}">
+ <button class="b" onclick="addItem()">${t('add')}</button></div>`+(S.items.length?S.items.map(i=>`<div class="c"><b>${esc(i.name)}</b>
+ <div class="k"><span>${t('cost')} / ${t('price')}</span><span>${n(i.cost)} / ${n(i.price)}</span></div><div class="k"><span>${t('qty')}</span><b>${i.qty}</b></div>
+ <button class="s" onclick="addQ('${i.id}')">${t('addq')}</button> <button class="d" onclick="delItem('${i.id}')">${t('del')}</button></div>`).join(''):`<p>${t('none')}</p>`)},
+sale(){const o=S.items.filter(i=>i.qty>0).map(i=>`<option value="${i.id}">${esc(i.name)} (${i.qty})</option>`).join('');
+ return `<div class="c"><select id="a" onchange="fillP()"><option value="">${t('item')}</option>${o}</select><input id="b" type="number" inputmode="decimal" placeholder="${t('qty')}" value="1">
+ <input id="c" type="number" inputmode="decimal" placeholder="${t('price')}"><input id="d" type="number" inputmode="decimal" placeholder="${t('paid')}"><input id="e" placeholder="${t('cust')}">
+ <button class="b" onclick="addSale()">${t('sell')}</button></div>`+S.sales.slice(-15).reverse().map(s=>`<div class="c">${row(esc(s.name)+' × '+s.qty,n(s.qty*s.price))}<small>${s.date}${s.cust?' · '+esc(s.cust):''}</small></div>`).join('')},
+due(){const m={};S.sales.forEach(s=>{const d=s.qty*s.price-s.paid;if(d>0&&s.cust)m[s.cust]=(m[s.cust]||0)+d});const k=Object.keys(m);
+ return k.length?k.map(c=>`<div class="c">${row(esc(c),n(m[c]),'neg')}<button class="s" data-c="${esc(c)}" onclick="recv(this.dataset.c)">${t('recv')}</button></div>`).join(''):`<p>${t('none')}</p>`},
+exp(){return `<div class="c"><input id="a" placeholder="${t('note')}"><input id="b" type="number" inputmode="decimal" placeholder="${t('amount')}"><button class="b" onclick="addExp()">${t('add')}</button></div>`+
+ S.exps.slice().reverse().map(e=>`<div class="c">${row(esc(e.note),n(e.amt))}<small>${e.date}</small> <button class="d" onclick="delExp('${e.id}')">${t('del')}</button></div>`).join('')},
+more(){return `<div class="c"><button class="b" onclick="S.lang=S.lang=='ur'?'en':'ur';save();render()">${t('lang')}</button></div>
+ <div class="c"><b>${t('bk')}</b><textarea rows="5" readonly onclick="this.select()">${esc(JSON.stringify(S))}</textarea></div>
+ <div class="c"><b>${t('rs')}</b><textarea id="r" rows="4"></textarea><button class="b" onclick="restore()">${t('rsb')}</button></div>`}};
+function render(){document.documentElement.dir=S.lang=='ur'?'rtl':'ltr';document.documentElement.lang=S.lang;$('#h').textContent=t('app');
+ $('#nav').innerHTML=Object.keys(V).map(k=>`<button class="${k==tab?'on':''}" onclick="tab='${k}';render()">${t(k)}</button>`).join('');$('#m').innerHTML=V[tab]()}
+function addItem(){const a=v('a');if(!a)return;S.items.push({id:uid(),name:a,cost:+v('b')||0,price:+v('c')||0,qty:+v('d')||0});save();render()}
+function addQ(id){const q=+prompt(t('qty'));if(q){S.items.find(i=>i.id==id).qty+=q;save();render()}}
+function delItem(id){if(confirm(t('sure'))){S.items=S.items.filter(i=>i.id!=id);save();render()}}
+function fillP(){const i=S.items.find(i=>i.id==v('a'));if(i)$('#c').value=i.price}
+function addSale(){const i=S.items.find(i=>i.id==v('a')),q=+v('b'),p=+v('c');if(!i||!q||!p)return;if(q>i.qty)return alert(t('nostock'));
+ const tot=q*p,paid=v('d')===''?tot:Math.min(+v('d'),tot),cust=v('e');if(paid<tot&&!cust)return alert(t('needc'));
+ i.qty-=q;S.sales.push({id:uid(),date:new Date().toISOString().slice(0,10),name:i.name,qty:q,price:p,cost:i.cost,paid,cust});save();render()}
+function recv(c){let a=+prompt(t('amount'));if(!a)return;for(const s of S.sales.filter(s=>s.cust==c)){const p=Math.min(s.qty*s.price-s.paid,a);if(p>0){s.paid+=p;a-=p}}save();render()}
+function addExp(){const a=+v('b');if(!a)return;S.exps.push({id:uid(),date:new Date().toISOString().slice(0,10),note:v('a'),amt:a});save();render()}
+function delExp(id){if(confirm(t('sure'))){S.exps=S.exps.filter(e=>e.id!=id);save();render()}}
+function restore(){try{const d=JSON.parse(v('r'));if(!d.items||!d.sales||!d.exps)throw 0;S=d;save();render();alert(t('ok'))}catch(e){alert(t('bad'))}}
+render();
+</script></body></html>
